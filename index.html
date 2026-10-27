@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en" class="is-starting">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Four in a Row</title>
+  <meta name="description" content="Four in a Row: drop discs and line up four before your opponent does. Play a friend or a negamax AI in your browser, in English or Turkish.">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Four in a Row">
+  <meta property="og:description" content="Drop discs, line up four. A free browser game against a friend or a negamax AI that thinks in a Web Worker.">
+  <meta property="og:url" content="https://celaldrg.github.io/four-in-a-row/">
+  <meta property="og:image" content="https://celaldrg.github.io/four-in-a-row/docs/screenshot.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="800">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231e293b'/%3E%3Cg fill='%232dd4bf'%3E%3Ccircle cx='27' cy='51' r='7'/%3E%3Ccircle cx='40' cy='51' r='7'/%3E%3Ccircle cx='40' cy='38' r='7'/%3E%3C/g%3E%3Cg fill='%23f43f5e'%3E%3Ccircle cx='14' cy='51' r='7'/%3E%3Ccircle cx='27' cy='38' r='7'/%3E%3Ccircle cx='40' cy='25' r='7'/%3E%3Ccircle cx='53' cy='12' r='7'/%3E%3C/g%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="src/main.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <h1 class="brand">
+        <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+          <rect width="64" height="64" rx="16" fill="#1e293b"/>
+          <g fill="#2dd4bf"><circle cx="27" cy="51" r="7"/><circle cx="40" cy="51" r="7"/><circle cx="40" cy="38" r="7"/></g>
+          <g fill="#f43f5e"><circle cx="14" cy="51" r="7"/><circle cx="27" cy="38" r="7"/><circle cx="40" cy="25" r="7"/><circle cx="53" cy="12" r="7"/></g>
+        </svg>
+        <span class="brand-name" data-i18n="title">Four in a Row</span>
+      </h1>
+      <div class="topbar-actions">
+        <button id="new-game" class="btn btn-primary btn-compact" type="button">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v4.5h4.5"/></svg>
+          <span class="btn-label" data-i18n="newGame">New game</span>
+        </button>
+        <button id="lang" class="btn btn-square" type="button" data-i18n="langToggle" data-i18n-title="langToggleTitle" title="Switch to Turkish">TR</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container layout">
+    <section class="stage">
+      <div class="scoreboard" role="group" aria-label="Score" data-i18n-label="scoreLabel">
+        <div class="score-card p1" id="card-1">
+          <span class="chip" aria-hidden="true"></span>
+          <span class="score-name">You</span>
+          <span class="score-value">0</span>
+        </div>
+        <div class="score-card p2" id="card-2">
+          <span class="chip" aria-hidden="true"></span>
+          <span class="score-name">Computer</span>
+          <span class="score-value">0</span>
+        </div>
+      </div>
+
+      <div class="statusbar">
+        <p class="status" id="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-text" id="status-text">Your turn</span>
+        </p>
+        <button id="undo" class="btn btn-compact" type="button" data-i18n-title="undo" title="Undo">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+          <span class="btn-label" data-i18n="undo">Undo</span>
+        </button>
+      </div>
+
+      <div class="board-wrap" id="board" tabindex="0" role="group" aria-label="Game board with 7 columns. Press 1 to 7 to drop a disc, or choose a column with the arrow keys and press Enter." data-i18n-label="boardLabel" aria-keyshortcuts="1 2 3 4 5 6 7 ArrowLeft ArrowRight Enter"></div>
+
+      <button id="settings-toggle" class="btn settings-toggle" type="button" aria-expanded="false" aria-controls="panel">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+        <span class="sr-only" data-i18n="settingsTitle">Game settings</span>
+        <span class="settings-summary" id="settings-summary">vs Computer · Medium · You start</span>
+        <svg class="icon chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </section>
+
+    <aside class="panel is-collapsed" id="panel" aria-labelledby="panel-title">
+      <h2 class="panel-title" id="panel-title" data-i18n="settingsTitle">Game settings</h2>
+      <div class="settings" id="settings">
+        <fieldset class="group" id="group-mode">
+          <legend class="group-label" data-i18n="modeLabel">Mode</legend>
+          <div class="segmented">
+            <label class="segment"><input type="radio" name="mode" value="ai"><span data-i18n="modeAi">vs Computer</span></label>
+            <label class="segment"><input type="radio" name="mode" value="pvp"><span data-i18n="modePvp">2 players</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="group" id="group-level">
+          <legend class="group-label" data-i18n="levelLabel">Level</legend>
+          <div class="segmented">
+            <label class="segment"><input type="radio" name="level" value="easy"><span data-i18n="levelEasy">Easy</span></label>
+            <label class="segment"><input type="radio" name="level" value="medium"><span data-i18n="levelMedium">Medium</span></label>
+            <label class="segment"><input type="radio" name="level" value="hard"><span data-i18n="levelHard">Hard</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="group" id="group-first">
+          <legend class="group-label" data-i18n="firstLabel">First move</legend>
+          <div class="segmented">
+            <label class="segment"><input type="radio" name="first" value="human"><span data-i18n="firstHuman">You</span></label>
+            <label class="segment"><input type="radio" name="first" value="ai"><span data-i18n="firstAi">Computer</span></label>
+          </div>
+        </fieldset>
+      </div>
+
+      <section class="how" aria-labelledby="how-title">
+        <h2 class="panel-title" id="how-title" data-i18n="howTitle">How to play</h2>
+        <p data-i18n="howRules">Take turns dropping discs. Line up four of your colour across, down or diagonally.</p>
+        <p data-i18n="howPointer">Click or tap a column. On touch screens, slide to aim and lift to drop.</p>
+        <h3 class="keys-title" data-i18n="keysTitle">Keyboard</h3>
+        <ul class="keys">
+          <li><span class="keycaps"><kbd>1</kbd>–<kbd>7</kbd></span><span data-i18n="keyDrop">drop in that column</span></li>
+          <li><span class="keycaps"><kbd>←</kbd><kbd>→</kbd></span><span data-i18n="keyAim">choose a column</span></li>
+          <li><span class="keycaps"><kbd>Enter</kbd></span><span data-i18n="keyConfirm">drop in the chosen column</span></li>
+          <li><span class="keycaps"><kbd>U</kbd></span><span data-i18n="keyUndo">undo</span></li>
+          <li><span class="keycaps"><kbd>N</kbd></span><span data-i18n="keyNew">new game</span></li>
+        </ul>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="container footer">
+    <span>MIT</span>
+    <span aria-hidden="true">·</span>
+    <a href="https://github.com/celaldrg/four-in-a-row" data-i18n="source">Source on GitHub</a>
+  </footer>
+
+  <p class="sr-only" id="announcer" aria-live="polite"></p>
+</body>
+</html>

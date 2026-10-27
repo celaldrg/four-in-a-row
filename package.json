@@ -1,0 +1,11 @@
+{
+  "name": "four-in-a-row",
+  "version": "1.0.0",
+  "description": "Four in a Row: drop discs, line up four. A dependency-free browser game with a negamax AI.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}

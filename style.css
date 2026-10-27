@@ -1,0 +1,943 @@
+/*
+ * Four in a Row: dark theme, mobile first.
+ * Phones: one column. From 860px wide: board plus a side panel. Short landscape
+ * screens: board on the left, controls on the right.
+ * The board is an SVG whose viewBox is 728 x 736 user units (see src/board-view.js);
+ * the top 108 units are the lane where the next disc hovers, the rest is the frame.
+ */
+
+:root {
+  color-scheme: dark;
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-hover: #273449;
+  --surface-sunken: #0b1222;
+  --border: rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(148, 163, 184, 0.28);
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #f43f5e;
+  /* Darker accent shades keep white button text above 4.5:1 contrast. */
+  --accent-strong: #e11d48;
+  --accent-deep: #be123c;
+  --p1: #f43f5e;
+  --p2: #2dd4bf;
+  --radius: 12px;
+  --shadow: 0 12px 32px -14px rgba(2, 6, 23, 0.7), 0 2px 6px rgba(2, 6, 23, 0.3);
+  --shadow-sm: 0 1px 2px rgba(2, 6, 23, 0.45);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --gutter: 16px;
+  --gap: 8px;
+  /* Height of everything around the board in the current layout; the board shrinks on short screens. */
+  --chrome-h: 284px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.4;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(1100px 520px at 50% -200px, rgba(244, 63, 94, 0.1), transparent 70%) no-repeat, var(--bg);
+  color: var(--text);
+}
+
+.container {
+  width: 100%;
+  max-width: 904px;
+  margin-inline: auto;
+  padding-left: max(var(--gutter), env(safe-area-inset-left));
+  padding-right: max(var(--gutter), env(safe-area-inset-right));
+}
+
+/* Set until the first state is drawn, so the page does not animate into it on load. */
+.is-starting *,
+.is-starting *::before,
+.is-starting *::after {
+  transition: none !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Header ---------- */
+
+.topbar {
+  padding-top: env(safe-area-inset-top);
+  border-bottom: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+
+.brand-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 150ms var(--ease),
+    border-color 150ms var(--ease),
+    transform 150ms var(--ease),
+    opacity 150ms var(--ease);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn-primary {
+  border-color: transparent;
+  background: var(--accent-strong);
+  color: #fff;
+  box-shadow: 0 6px 18px -8px rgba(244, 63, 94, 0.7);
+}
+
+.btn-primary.is-attention {
+  animation: attention 1.8s ease-out infinite;
+}
+
+.btn-square {
+  width: 40px;
+  padding: 0;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+}
+
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    background: var(--surface-hover);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-deep);
+  }
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- Layout ---------- */
+
+.layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  /* Fits the board to the screen height (0.989 = 728 / 736, its width per unit of height),
+     but never below 296px, where each column is still a 40px tap target (296 / 7.28);
+     short screens scroll a little instead. */
+  width: min(100%, 560px, max(296px, calc((100vh - var(--chrome-h)) * 0.989)));
+  width: min(100%, 560px, max(296px, calc((100svh - var(--chrome-h)) * 0.989)));
+  margin-inline: auto;
+}
+
+/* ---------- Score ---------- */
+
+.scoreboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  /* The cards tighten up when the scoreboard itself is narrow, see @container below. */
+  container-type: inline-size;
+}
+
+.score-card {
+  --tone: var(--p1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 200ms var(--ease),
+    box-shadow 200ms var(--ease);
+}
+
+.score-card.p2 {
+  --tone: var(--p2);
+}
+
+.score-card.is-active {
+  border-color: color-mix(in srgb, var(--tone) 70%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--tone) 35%, transparent),
+    0 8px 22px -12px color-mix(in srgb, var(--tone) 80%, transparent);
+}
+
+.chip {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe4e6, #fb7185 30%, #e11d48 75%, #9f1239);
+}
+
+.p2 .chip {
+  background: radial-gradient(circle at 35% 30%, #ccfbf1, #5eead4 30%, #14b8a6 75%, #115e59);
+}
+
+.score-card.is-thinking .chip {
+  animation: thinking 0.9s ease-in-out infinite;
+}
+
+.score-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 200ms var(--ease);
+}
+
+.score-card.is-active .score-name {
+  color: var(--text);
+}
+
+.score-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* Narrow scoreboard (small or short phones, small windows): tighter cards so the names fit. */
+@container (max-width: 340px) {
+  .score-card {
+    gap: 8px;
+    padding: 0 10px;
+  }
+
+  .score-name {
+    font-size: 0.875rem;
+  }
+}
+
+/* ---------- Status ---------- */
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.status {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background-color 200ms var(--ease);
+}
+
+.status[data-tone="1"] .status-dot {
+  background: var(--p1);
+}
+
+.status[data-tone="2"] .status-dot {
+  background: var(--p2);
+}
+
+.status.is-over .status-text {
+  font-weight: 800;
+}
+
+/* ---------- Board ---------- */
+
+.board-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 728 / 736;
+  border-radius: var(--radius);
+  outline: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Shadow and focus ring around the frame only, not the lane above it. */
+.board-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 14.674% 0 0;
+  border-radius: 3.571% / 4.14%;
+  box-shadow:
+    0 0 0 1px rgba(148, 163, 184, 0.14),
+    0 28px 50px -22px rgba(2, 6, 23, 0.95),
+    0 10px 24px -12px rgba(2, 6, 23, 0.7);
+  transition: box-shadow 150ms var(--ease);
+}
+
+.board-wrap:focus-visible::before {
+  box-shadow:
+    0 0 0 3px var(--bg),
+    0 0 0 5px var(--accent),
+    0 28px 50px -22px rgba(2, 6, 23, 0.95);
+}
+
+.board-svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.board-svg .holes circle {
+  fill: url(#fiar-hole);
+}
+
+.board-svg .frame {
+  fill: url(#fiar-frame);
+}
+
+.board-svg .rims circle {
+  fill: none;
+  stroke: rgba(2, 6, 23, 0.55);
+  stroke-width: 4;
+}
+
+.column-highlight {
+  fill: rgba(226, 232, 240, 0.07);
+  transition:
+    transform 160ms var(--ease),
+    opacity 160ms var(--ease);
+}
+
+.column-flash {
+  fill: rgba(244, 63, 94, 0.35);
+  opacity: 0;
+}
+
+.ghost {
+  fill: none;
+  stroke-width: 4;
+  stroke-dasharray: 7 7;
+  transition:
+    transform 160ms var(--ease),
+    opacity 160ms var(--ease);
+}
+
+.ghost.p1 {
+  stroke: var(--p1);
+}
+
+.ghost.p2 {
+  stroke: var(--p2);
+}
+
+.preview {
+  opacity: 0.95;
+  transition:
+    transform 160ms var(--ease),
+    opacity 160ms var(--ease);
+}
+
+.board-svg .is-hidden {
+  opacity: 0;
+}
+
+.disc.p1 .disc-face {
+  fill: url(#fiar-p1);
+}
+
+.disc.p2 .disc-face {
+  fill: url(#fiar-p2);
+}
+
+.disc-ring {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.24);
+  stroke-width: 3;
+}
+
+.disc-mark {
+  fill: #fff;
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+}
+
+.disc.is-last .disc-mark {
+  opacity: 0.9;
+}
+
+.disc-body {
+  transition: opacity 250ms var(--ease);
+}
+
+.disc-drop.is-dropping {
+  animation: disc-drop var(--duration, 400ms) linear both;
+}
+
+.disc.is-win .disc-body {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: win-pulse 1.2s ease-in-out var(--win-delay, 0ms) infinite;
+}
+
+.disc.is-win .disc-ring {
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 4;
+}
+
+.board-svg.is-won .disc:not(.is-win) .disc-body {
+  opacity: 0.4;
+  transition-delay: var(--win-delay, 0ms);
+}
+
+/* ---------- Settings ---------- */
+
+.settings-toggle {
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.settings-summary {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+}
+
+.settings-toggle .chevron {
+  transition: transform 200ms var(--ease);
+}
+
+.settings-toggle[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+.panel {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  width: min(100%, 560px);
+  margin-inline: auto;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  animation: panel-in 200ms var(--ease);
+}
+
+.panel.is-collapsed {
+  display: none;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.settings {
+  display: grid;
+  gap: 12px;
+}
+
+.group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.group-label {
+  margin-bottom: 4px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.segmented {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+}
+
+.segment {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.segment input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segment span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 4px 6px;
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  transition:
+    background-color 150ms var(--ease),
+    color 150ms var(--ease),
+    box-shadow 150ms var(--ease);
+}
+
+.segment input:checked + span {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-hover));
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent),
+    0 2px 6px -2px rgba(2, 6, 23, 0.6);
+}
+
+.segment input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.group:disabled .group-label,
+.group:disabled .segment span {
+  opacity: 0.45;
+}
+
+.group:disabled .segment input {
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .group:not(:disabled) .segment input:not(:checked):hover + span {
+    color: var(--text);
+  }
+}
+
+/* ---------- How to play ---------- */
+
+.how {
+  display: grid;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.how p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.keys-title {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.keys {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.keys li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.keycaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 76px;
+}
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--surface-sunken);
+  color: var(--text);
+  font: 600 0.75rem/1 ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 4px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: rgba(226, 232, 240, 0.35);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 150ms var(--ease);
+}
+
+.footer a:hover {
+  text-decoration-color: var(--accent);
+}
+
+.footer a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Animations ---------- */
+
+/* Falls with gravity from the lane, lands, bounces once. --from is negative (above the cell). */
+@keyframes disc-drop {
+  0% {
+    transform: translateY(var(--from));
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+
+  70% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.2, 0.6, 0.35, 1);
+  }
+
+  85% {
+    transform: translateY(-12px);
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes win-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.84);
+  }
+}
+
+@keyframes thinking {
+  50% {
+    transform: scale(0.65);
+    opacity: 0.55;
+  }
+}
+
+@keyframes attention {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.55);
+  }
+
+  70%,
+  100% {
+    box-shadow: 0 0 0 10px rgba(244, 63, 94, 0);
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* ---------- Narrow phones ---------- */
+
+@media (max-width: 360px) {
+  :root {
+    --gutter: 12px;
+    /* The settings summary often wraps to two lines here. */
+    --chrome-h: 300px;
+  }
+
+  .btn-compact {
+    width: 40px;
+    padding: 0;
+  }
+
+  .btn-compact .btn-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* ---------- Wide screens: board and side panel ---------- */
+
+@media (min-width: 860px) and (min-height: 541px) {
+  :root {
+    --gap: 12px;
+    --chrome-h: 280px;
+  }
+
+  .topbar-inner {
+    min-height: 64px;
+  }
+
+  .brand {
+    font-size: 1.1875rem;
+  }
+
+  .brand-mark {
+    width: 32px;
+    height: 32px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: min(540px, max(296px, calc((100vh - var(--chrome-h)) * 0.989)), calc(100% - 332px)) 300px;
+    grid-template-columns: min(540px, max(296px, calc((100svh - var(--chrome-h)) * 0.989)), calc(100% - 332px)) 300px;
+    justify-content: center;
+    align-items: start;
+    gap: 32px;
+    padding-top: 24px;
+    padding-bottom: 16px;
+  }
+
+  .stage {
+    width: auto;
+    margin: 0;
+  }
+
+  .settings-toggle {
+    display: none;
+  }
+
+  .panel,
+  .panel.is-collapsed {
+    display: grid;
+    width: auto;
+    margin: 0;
+  }
+}
+
+/* ---------- Short landscape screens: board left, controls right ---------- */
+
+@media (orientation: landscape) and (max-height: 540px) {
+  .topbar-inner {
+    min-height: 48px;
+  }
+
+  .layout {
+    --board-w: max(220px, calc((100vh - 72px) * 0.989));
+    display: grid;
+    grid-template-columns: var(--board-w) minmax(0, 420px);
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas:
+      "board score"
+      "board status"
+      "board toggle"
+      "board panel";
+    justify-content: center;
+    align-items: start;
+    gap: 8px 20px;
+  }
+
+  @supports (height: 100svh) {
+    .layout {
+      --board-w: max(220px, calc((100svh - 72px) * 0.989));
+    }
+  }
+
+  .stage {
+    display: contents;
+  }
+
+  .scoreboard {
+    grid-area: score;
+  }
+
+  .statusbar {
+    grid-area: status;
+  }
+
+  .board-wrap {
+    grid-area: board;
+  }
+
+  .settings-toggle {
+    grid-area: toggle;
+  }
+
+  .panel {
+    grid-area: panel;
+    width: auto;
+    margin: 0;
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
