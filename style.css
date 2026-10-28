@@ -880,7 +880,8 @@ kbd {
   }
 
   .layout {
-    --board-w: max(220px, calc((100vh - 72px) * 0.989));
+    /* Never below 292px, so each column stays a 40px tap target (292 / 7.28); very short screens scroll a little. */
+    --board-w: max(292px, calc((100vh - 72px) * 0.989));
     display: grid;
     grid-template-columns: var(--board-w) minmax(0, 420px);
     grid-template-rows: auto auto auto 1fr;
@@ -896,7 +897,7 @@ kbd {
 
   @supports (height: 100svh) {
     .layout {
-      --board-w: max(220px, calc((100svh - 72px) * 0.989));
+      --board-w: max(292px, calc((100svh - 72px) * 0.989));
     }
   }
 
